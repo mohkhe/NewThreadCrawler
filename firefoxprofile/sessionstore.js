@@ -1,1 +1,1 @@
-{"windows":[],"selectedWindow":0,"_closedWindows":[],"session":{"state":"stopped","lastUpdate":1430292557865,"startTime":1430292550939,"recentCrashes":0},"scratchpads":[],"global":{}}
+{"windows":[],"selectedWindow":0,"_closedWindows":[],"session":{"state":"stopped","lastUpdate":1443529388674,"startTime":1443526689288,"recentCrashes":0},"scratchpads":[],"global":{}}

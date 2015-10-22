@@ -23,6 +23,7 @@ public class Cache {
 	String cacheMapFilePath;
 	public IndexesConfigLowVersionLucene indexOld;
 	public IndexesConfigLowVersionLucene indexNew;
+	public IndexesConfigLowVersionLucene indexAll;
 	public String textOfURL = "";
 	public String sourceCodeOfURL = "";
 
@@ -91,11 +92,16 @@ public class Cache {
 	}
 
 	public synchronized void saveInCache(String URL, String pageContent, String pageHTML,
-			boolean isIndexed) {
+			boolean isIndexed, boolean isChangedPagesIndexed) {
 		if (isIndexed) {
-			if ((!pageContent.equals(""))
-					|| pageContent.equalsIgnoreCase("error")) {
-				indexOld.index(URL, pageContent, pageHTML);
+			if (!indexAll.IsInSearchIndex(URL, "url")) {//setIndexOld
+				indexAll.index(URL, pageContent, pageHTML);
+			}
+			if (/*(!pageContent.equals(""))
+					||*/ !pageContent.equalsIgnoreCase("error")) {
+				if(!isChangedPagesIndexed){
+					indexOld.index(URL, pageContent, pageHTML);
+				}
 				indexNew.index(URL, pageContent, pageHTML);
 			} else {
 				System.out.println("Empty text or error in extracting " + URL);
@@ -131,10 +137,13 @@ public class Cache {
 
 	public boolean saveInNewIndex(String url, boolean isIndexed) {
 		if (isIndexed) {
-			if (indexOld.searchIndex(url, "url")) {
+			if (!indexAll.IsInSearchIndex(url, "url")) {
+				indexAll.index(url, textOfURL, sourceCodeOfURL);
+			}
+			if (indexOld.IsInSearchIndex(url, "url")) {
 				textOfURL = indexOld.textOfURL;
 				sourceCodeOfURL = indexOld.sourceCodeOfURL;
-				if (!indexNew.searchIndex(url, "url")) {
+				if (!indexNew.IsInSearchIndex(url, "url")) {
 					indexNew.index(url, textOfURL, sourceCodeOfURL);
 				}
 				return true;
@@ -144,16 +153,21 @@ public class Cache {
 		return false;
 	}
 	
-	public synchronized boolean existsAlreadyInCacheOrIndex(String url, boolean isIndexed) {
+	public synchronized boolean existsAlreadyInCacheOrIndex(String url, boolean isIndexed, boolean isChangedPagesIndexed) {
 		if (isIndexed) {
-			if (indexOld.searchIndex(url, "url")) {
+			if (!indexAll.IsInSearchIndex(url, "url")) {
+				indexAll.index(url, textOfURL, sourceCodeOfURL);
+			}
+			if (indexOld.IsInSearchIndex(url, "url")) {
 				textOfURL = indexOld.textOfURL;
 				sourceCodeOfURL = indexOld.sourceCodeOfURL;
-				if (!indexNew.searchIndex(url, "url")) {
-					indexNew.index(url, textOfURL, sourceCodeOfURL);
+				if(!isChangedPagesIndexed){
+					if (!indexNew.IsInSearchIndex(url, "url")) {
+						indexNew.index(url, textOfURL, sourceCodeOfURL);
+					}
 				}
 				return true;
-			} else if (indexNew.searchIndex(url, "url")) {
+			} else if (indexNew.IsInSearchIndex(url, "url") && !isChangedPagesIndexed) {//to make both caches the same
 				textOfURL = indexOld.textOfURL;
 				sourceCodeOfURL = indexOld.sourceCodeOfURL;
 				indexOld.index(url, textOfURL, sourceCodeOfURL);
@@ -170,7 +184,15 @@ public class Cache {
 			}
 		}
 	}
-
+	public synchronized boolean existsInOldCache(String url, boolean isIndexed, boolean isChangedPagesIndexed) {
+		if (isIndexed) {
+			if (indexOld.IsInSearchIndex(url, "url")) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public String getPageTextContentFromCache(String url, boolean isIndexed) {
 		String pageContent = "";
 
@@ -244,7 +266,7 @@ public class Cache {
 
 	public boolean contains(String term) {
 		// TODO Auto-generated method stub
-		if (this.indexNew.searchIndex(term, "text")) {
+		if (this.indexNew.IsInSearchIndex(term, "text")) {
 			return true;
 		} else {
 			return false;
@@ -258,6 +280,10 @@ public class Cache {
 
 	public void setIndexNew(String path) {
 		indexNew = new IndexesConfigLowVersionLucene(path);
+
+	}
+	public void setIndexAll(String path) {
+		indexAll = new IndexesConfigLowVersionLucene(path);
 
 	}
 }

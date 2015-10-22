@@ -1,18 +1,18 @@
 package db.infiniti.config;
 
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
-
 import utils.diff_match;
 import utils.diff_match.Diff;
+import java.util.Set;
+import PageComparison.Shingle;
+
 
 public class PagesComparator {
 	String pageOnehtml;
 	String pageOneText;
 	String pageTwohtml;
 	String pageTwoText;
-	diff_match diff;
+	diff_match diff = new diff_match();
 
 	public void setPageOne(String pageOnehtml, String pageOnetext) {
 		this.pageOnehtml = pageOnehtml;
@@ -43,44 +43,69 @@ public class PagesComparator {
 		}
 	}
 
-	public Integer changedResults(String query, List<String> recentResults,
-			HashMap<String, List<String>> previousQueryResults) {
-		List<String> previousResults;
-		//HashMap<String, Integer> queryNumberOfResChanges = new HashMap<String, Integer>();
-		int numberOfDifferences = 0;
-		if (previousQueryResults.containsKey(query)) {
-			previousResults = previousQueryResults.get(query);
-			numberOfDifferences = compareLists(previousResults,
-					recentResults);
-		} else {
-			System.out
-					.println("Query not found in the previous query results list.");
-		}
-		return numberOfDifferences;// html
-
-	}
-
-	private int compareLists(List<String> previousResults,
-			List<String> recentResults) {
-		int numberOfchanges = 0;
-		for (int i = 0; i < previousResults.size(); i++) {
-			String url = previousResults.get(i);
-			if (!recentResults.contains(url)) {
-				numberOfchanges++;
-			}
-		}
-		return numberOfchanges;
-	}
-
-	public boolean changedMethod_diff() {// extra package to compare html pages
+	public boolean changedMethod_diffText() {// extra package to compare html pages
 		LinkedList<Diff> linkedListDiff = diff.diff_main(pageOneText,
 				pageTwoText);
-		return true;
+	/*	int differentChars = diff.diff_levenshtein(linkedListDiff);
+		String [] a = diff.diff_halfMatch(pageOneText, pageTwoText);*/
+		
+		if(linkedListDiff!= null){
+			if(linkedListDiff.isEmpty()){
+				return false;
+			}else {
+				return true;
+			}
+		}else{
+			System.out.println("Text linkedListDiff is null.");
+			return false;
+		}
+		
+	}
+	
+	public boolean changedMethod_diffHtml() {// extra package to compare html pages
+		LinkedList<Diff> linkedListDiff = diff.diff_main(pageOnehtml,
+				pageTwohtml);
+		if(linkedListDiff!= null){
+			if(linkedListDiff.isEmpty()){
+				return false;
+			}else 
+				return true;
+		}else{
+			System.out.println("HTML linkedListDiff is null.");
+			return false;
+		}
+		
+	}
+	public boolean changedMethod_diff_Chars100() {// extra package to compare html pages
+		LinkedList<Diff> linkedListDiff;
+		linkedListDiff = diff.diff_main(pageOneText,
+				pageTwoText);
+		int differentChars = diff.diff_levenshtein(linkedListDiff);
+		
+			if(differentChars<100){
+				return false;
+			}else {
+				return true;
+			}
+	}
+	
+	public boolean changedMethod_shingle() {// extra package to compare html pages
+		Set<String> pageOneShingleSet = new Shingle().shingles(pageOneText);
+		Set<String> pageTwoShingleSet = new Shingle().shingles(pageTwoText);
+		float difference = new Shingle().jaccard_similarity_coeff(pageOneShingleSet, pageTwoShingleSet);
+			if(difference > 0.9  || Float.isNaN(difference)){//NaN both are empty
+				return false;
+			}else {
+				return true;
+			}
 	}
 
-	public boolean changedMethod_daisy() {// extra package to compare html pages
-
-		return true;
+	public void resetValues() {
+		pageOnehtml = "";
+		pageOneText = "";
+		pageTwohtml = "";
+		pageTwoText = "";
+		
 	}
 
 }

@@ -19,7 +19,6 @@ public class CommonFunctionsClass {
 	}
 	//define the set of stopwords here
 	HashSet<String> setListOfStopWords() {
-		listOfStopWords = new HashSet<String>();
 		listOfStopWords.add("the");
 		listOfStopWords.add("a");
 		listOfStopWords.add("an");
@@ -35,20 +34,86 @@ public class CommonFunctionsClass {
 		listOfStopWords.add("from");
 		listOfStopWords.add("by");
 		listOfStopWords.add("for");
+		listOfStopWords.add("you");
+		listOfStopWords.add("your");
+		listOfStopWords.add("one");
+		listOfStopWords.add("up");
+		listOfStopWords.add("us");
+		listOfStopWords.add("other");
+		listOfStopWords.add("others");
+		listOfStopWords.add("over");
+		listOfStopWords.add("home");
+		listOfStopWords.add("our");
+		listOfStopWords.add("first");
+		
+		listOfStopWords.add("het");
+		listOfStopWords.add("de");
+		listOfStopWords.add("en");
+		listOfStopWords.add("met");
+		listOfStopWords.add("andere");
+		listOfStopWords.add("tussen");
+		listOfStopWords.add("van");
+		listOfStopWords.add("een");
+		listOfStopWords.add("pagina");
+		listOfStopWords.add("deze");
+		
+		listOfStopWords.add("can");
+		listOfStopWords.add("could");
+		listOfStopWords.add("have");
+		listOfStopWords.add("had");
+		listOfStopWords.add("will");
+		listOfStopWords.add("would");
+		listOfStopWords.add("there");
+		listOfStopWords.add("with");
+		listOfStopWords.add("wikipedia");
+		listOfStopWords.add("wikimedia");
+		listOfStopWords.add("also");
+		listOfStopWords.add("org");
+		listOfStopWords.add("here");
+		listOfStopWords.add("there");
+		listOfStopWords.add("data");
+		listOfStopWords.add("that");
+		listOfStopWords.add("this");
+		listOfStopWords.add("these");
+		listOfStopWords.add("those");
+		listOfStopWords.add("me");
+		listOfStopWords.add("her");
+		listOfStopWords.add("his");
+		listOfStopWords.add("world");
+		listOfStopWords.add("at");
 		listOfStopWords.add("was");
-		// [the, of, on, and, in, content, to, as, have, not, is, will, home,
-		// from, by, on, wikipedia, for, was, site]
-		// [the, of, on, and, in, content, to, as, have, not, is, will, home,
-		// from, by, on, wikipedia, for, was, site,
-		// this, contains, their, as, edit, term, with, there, page, his,
-		// also, when, org, here, data, that, wikimedia, me, world, at, video,
-		// page, it, powered, content, than, http, links, work, he, had,
-		// article, his, back, many, state, please, an, free, are, software,
-		// after, or, must, january, cache, centralauth, high, about, be,
-		// posted, expires, available, all, travel, book, also, mail, public,
-		// internet, right, retrieved, private, national, which, media, game,
-		// last, en, text, were, store, new, hotels, search, en, see, changes,
-		// has, encyclopedia]
+		listOfStopWords.add("were");
+		listOfStopWords.add("page");
+		listOfStopWords.add("new");
+		listOfStopWords.add("all");
+		listOfStopWords.add("also");
+		listOfStopWords.add("public");
+		listOfStopWords.add("next");
+		listOfStopWords.add("last");
+		listOfStopWords.add("book");
+		listOfStopWords.add("than");
+		listOfStopWords.add("which");
+		listOfStopWords.add("when");
+		listOfStopWords.add("see");
+		listOfStopWords.add("many");
+		listOfStopWords.add("has");
+		listOfStopWords.add("are");
+		listOfStopWords.add("com");
+		listOfStopWords.add("or");
+		listOfStopWords.add("more");
+		listOfStopWords.add("be");
+		listOfStopWords.add("its");
+		listOfStopWords.add("data");
+		listOfStopWords.add("please");
+		listOfStopWords.add("http");
+		listOfStopWords.add("links");
+		listOfStopWords.add("their");
+		listOfStopWords.add("page");
+		listOfStopWords.add("about");
+		listOfStopWords.add("high");
+		listOfStopWords.add("must");
+		listOfStopWords.add("see");
+		listOfStopWords.add("book");
 		return listOfStopWords;
 	}
 	//set list of stop words with a given set

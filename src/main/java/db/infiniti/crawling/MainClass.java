@@ -1,10 +1,15 @@
 package db.infiniti.crawling;
 
 import java.io.File;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import db.infiniti.config.CrawlingConfig;
 
@@ -17,7 +22,8 @@ public class MainClass extends Thread {
 		String dataOutputTable = "";
 		int numberOfBrowsers = 1;
 		int numberOfSelectedSourceEngineIDtoCrawl = 0;
-		;
+
+		
 		if (args.length > 2) {
 			dataModelTable = args[0];
 			dataOutputTable = args[1];
@@ -37,29 +43,34 @@ public class MainClass extends Thread {
 		} else {
 			dataModelTable = "dsItemsModelXPATH";
 			dataOutputTable = "dsItemsOutputMohtry";
-			numberOfSelectedSourceEngineIDtoCrawl = 21;// 0;
+			numberOfSelectedSourceEngineIDtoCrawl = 26;// 0;
 			//27=phd comics
-			numberOfBrowsers = 3;
+			//21=vitol
+			//ed brinksma 25
+			//26=fireworks disaster
+			numberOfBrowsers = 1;
 		}
 
 		ArrayList<String> listOfReturnedResults = new ArrayList<String>();
 
-		String queryPoolPath = "querypool/vitol-sent-listofqueries";
-		String termFreqClueWebPath = "querypool/vitol-sent-listofqueries";
+		//String queryPoolPath = "querypool/phdcomics-sent-listofqueries";
+		String queryPoolPath = "querypool/words-15000-freq";
+				//"querypool/fireworkssentqueries-2weeks"; 
+		String termFreqClueWebPath = "querypool/words-15000-freq";//"querypool/fireworkssentqueries-2weeks";
 		// "querypool/phdcomics-sent-listofqueries";
 		// "querypool/wikiwebsorted";
-		//"querypool/phdcomics-sent-listofqueries";
-		//"querypool/vitol-sent-listofqueries";
+		// "querypool/phdcomics-sent-listofqueries";
+		// "querypool/vitol-sent-listofqueries";
 		// "querypool/words-2000-3000-freq";
 		// "querypool/words-5000-freq";
 		// "querypool/words-4500-5000-freq";
 		// "querypool/words-15000-freq";
-		//"querypool/words-50000-freq"
+		// "querypool/words-50000-freq"
 		// "querypool/words-300000-freq";
 		// "querypool/words-400000-freq";
 		// "querypool/words-500000-freq";
-		//"querypool/words-1milion-freq"
-		//"querypool/words-6milion-freq"
+		// "querypool/words-1milion-freq"
+		// "querypool/words-6milion-freq"
 		// complete list in /media/DATA/pool/webwords/wikiwebsorted
 		// not needed if reading from DB
 		String openDescFileDirPath = "websources/DT01/";
@@ -88,15 +99,20 @@ public class MainClass extends Thread {
 		crawlingConfig.setDataModelTable(dataModelTable);// "simpledatamoPredefinedlistOfWordsdel");//dsItemsModelXPATH");//dsItemsModelXPATH
 		// data model table to extract detailed pages
 		crawlingConfig
-				.setQuerySelectionApproach(crawlingConfig.PredefinedlistOfWords);
+				.setQuerySelectionApproach(crawlingConfig.combinedLFL_PLW);
 		// correlationBased - PredefinedlistOfWords - mostFreqFeedbackText - browsing -
-		// leastFromLast - leastFreqFeedbackText - combinedLFL_PLW
+		// leastFromLast - leastFreqFeedbackText - combinedLFL_PLW 
 		crawlingConfig.setQueries(queryPoolPath);
-		crawlingConfig.setInitialQuery(Arrays.asList("vitol"));//,"company") //phd comics
-		//crawlingConfig.setInitialQuery(Arrays.asList("vitol"));
+		crawlingConfig.setInitialQuery(Arrays.asList("fireworks disaster"));//,"company") //phd comics
+		//crawlingConfig.setInitialQuery(Arrays.asList("ed brinksma"));//,"company") //phd comics
+	//	crawlingConfig.setInitialQuery(Arrays.asList("vitol"));
+		
 		crawlingConfig.setIndexed(true);
 		crawlingConfig.setHave_words_in_memory(false);
-
+		
+		crawlingConfig.setChangedPagesIndexed(true);		
+		
+		
 		@SuppressWarnings("unused")
 		int totalNumOfWebsites = 0;
 		if (!readFromDB) {// read from openFIleDS or DB
@@ -150,7 +166,11 @@ public class MainClass extends Thread {
 
 			crawlingConfig.setCache(
 					"crawledData/" + crawlingConfig.getCollectionName() , crawlingConfig.isIndexed());
-
+			
+			if(crawlingConfig.isChangedPagesIndexed()){
+				crawlingConfig.pathToQueriesResultsFromCrawlOne = "crawledData/" + crawlingConfig.getCollectionName()+"/roundone/visited-pages-per-query";
+			}
+			
 			crawlingConfig.setPathToVisitedPagesDoc(crawlingConfig
 					.getCrawlStatusPath() + "visited-pages");
 			crawlingConfig.setPathToAllDOwnloadedPages(crawlingConfig

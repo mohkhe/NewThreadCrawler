@@ -85,7 +85,7 @@ public class IndexesConfigLowVersionLucene {
 	public void searchGetDocIndex() {
 		String url = "";
 		if (url != null) {
-			if (searchIndex(url, "url")) {
+			if (IsInSearchIndex(url, "url")) {
 				String htmlCode = textOfURL;
 				String textFromHtml = sourceCodeOfURL;
 
@@ -239,7 +239,7 @@ public class IndexesConfigLowVersionLucene {
 		return termFreqDoc;
 	}
 	
-	public boolean searchIndex(String searchString, String termString) {
+	public boolean IsInSearchIndex(String searchString, String termString) {
 		System.out.println("Searching for '" + searchString + "'");
 		// Directory directory = FSDirectory.getDirectory();
 		IndexReader indexReader;

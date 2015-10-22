@@ -11,6 +11,7 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,6 +37,18 @@ public class CrawlingConfig {
 	private String openDescDirPath = "";
 	private String queriesPath = "";
 	private String linkContentSavePath = "";
+	public String pathToQueriesResultsFromCrawlOne;
+
+	boolean changedPagesIndexed = false;
+
+	public boolean isChangedPagesIndexed() {
+		return changedPagesIndexed;
+	}
+
+	public void setChangedPagesIndexed(boolean changedPagesIndexed) {
+		this.changedPagesIndexed = changedPagesIndexed;
+	}
+
 	Thread crawlingTh;
 	String sourceURL;
 	ArrayList<String> listOfSourcesFolders;
@@ -50,27 +63,29 @@ public class CrawlingConfig {
 	Browser scrShots;
 	HashMap<Browser, Boolean> detailedPagesBrowsers = new HashMap<Browser, Boolean>();
 	TObjectIntHashMap<String> querySet = new TObjectIntHashMap<String>();
-	//HashSet<String> queryArray = new HashSet<String>();
+	// HashSet<String> queryArray = new HashSet<String>();
 	Set<String> queryArray = new THashSet<String>();
 	HashMap<String, Integer> termFreqInClueWeb = new HashMap<String, Integer>();
 	public TextEditor textEditor = new TextEditor();
-	
+
 	public List<String> sentQueries = new ArrayList<String>();
 
-	public String getLastQuery(){
+	public String getLastQuery() {
 		String query = "";
-		if(sentQueries.size()>0){
-			query = sentQueries.get(sentQueries.size()-1);
-			if(query.contains("+")){
-				query = query.substring(query.lastIndexOf("+")+1, query.length());
-				
+		if (sentQueries.size() > 0) {
+			query = sentQueries.get(sentQueries.size() - 1);
+			if (query.contains("+")) {
+				query = query.substring(query.lastIndexOf("+") + 1,
+						query.length());
+
 			}
-			if(query.contains("\"")){
+			if (query.contains("\"")) {
 				query = query.replaceAll("\"", "");
 			}
 		}
 		return query;
-	} 
+	}
+
 	boolean extractTextFromSRPages;
 	boolean extractTextFromAllVisitedPages;
 	public boolean SaveDSextractedInfoInFile;
@@ -78,9 +93,8 @@ public class CrawlingConfig {
 	boolean firstQuery = true;
 	public String query;
 	public List<String> initialQuery;
-	
 
-	String initialQueryProcesses = "";
+	public String initialQueryProcesses = "";
 
 	int querySelectionApproach;
 	public int PredefinedlistOfWords = 1;
@@ -90,6 +104,7 @@ public class CrawlingConfig {
 	public int leastFreqFeedbackText = 5;
 	public int combinedLFL_PLW = 6;
 	public int correlationBased = 7;
+	public int fromChangedPages = 7;
 	public boolean feedbackBasedApproach = false;
 
 	public FeedbackBasedQueryGenerator fbBasedQueryGenerator;
@@ -121,14 +136,12 @@ public class CrawlingConfig {
 	IndexesConfig indexB;
 	public Cache cache;
 	boolean have_words_in_memory = false;
-	
-	
+
 	public boolean isIndexed = false;
 	private IndexesConfigLowVersionLucene indexOld;
 	private IndexesConfigLowVersionLucene indexNew;
 	public ArrayList<String> listOfAllReturnedResults;
-	
-	
+
 	public boolean isHave_words_in_memory() {
 		return have_words_in_memory;
 	}
@@ -137,7 +150,6 @@ public class CrawlingConfig {
 		this.have_words_in_memory = have_words_in_memory;
 	}
 
-	
 	public boolean isIndexed() {
 		return isIndexed;
 	}
@@ -145,7 +157,6 @@ public class CrawlingConfig {
 	public void setIndexed(boolean isIndexed) {
 		this.isIndexed = isIndexed;
 	}
-
 
 	public List<String> getInitialQuery() {
 		return initialQuery;
@@ -165,14 +176,17 @@ public class CrawlingConfig {
 
 	public void setCache(String cachePath, boolean isIndexed) {
 		this.cache = new Cache();
-		if(!isIndexed){
-			cache.setCacheMapFilePath(cachePath+ "/cache/");
+		if (!isIndexed) {
+			cache.setCacheMapFilePath(cachePath + "/cache/");
 			cache.prepareCacheReadWrite();
 			cache.readCacheMap();
-		}else if (isIndexed){
-			cache.setIndexNew(cachePath+ "/indexes/newindex/pages");// = new IndexesConfig("newindex/pages");
-			cache.setIndexOld(cachePath+ "/indexes/index/pages");// = new IndexesConfig("index/pages");
-
+		} else if (isIndexed) {
+			cache.setIndexNew(cachePath + "/indexes/newindex/pages");// = new
+																		// IndexesConfig("newindex/pages");
+			cache.setIndexOld(cachePath + "/indexes/oldindex/pages");// = new
+																	// IndexesConfig("index/pages");
+			cache.setIndexAll(cachePath + "/indexes/allindex/pages");// = all
+			// IndexesConfig("index/pages");
 		}
 	}
 
@@ -469,18 +483,19 @@ public class CrawlingConfig {
 		String[] tokens = this.textEditor.tokenizer(pageContent);
 
 		for (String token : tokens) {
-			if (!token.equalsIgnoreCase("") && !this.textEditor.isRefinedQueryStopWordLength(token)
+			if (!token.equalsIgnoreCase("")
+					&& !this.textEditor.isRefinedQueryStopWordLength(token)
 					&& !initialQuery.contains(token)
 					&& !sentQueries.contains(token)) {// it is not used before
 				// !initialQuery.contains(token) to avoid having
 				// "vitol+company+vitol"
 				if (this.querySelectionApproach == this.combinedLFL_PLW) {
-					
-				/*	synchronized (queryArray) {
-						if(termFreqInClueWeb.containsKey(token)){
-							queryArray.add(token.intern());
-						}
-					}*/
+
+					/*
+					 * synchronized (queryArray) {
+					 * if(termFreqInClueWeb.containsKey(token)){
+					 * queryArray.add(token.intern()); } }
+					 */
 				} else {
 					synchronized (querySet) {
 						if (querySet.containsKey(token)) {
@@ -497,13 +512,12 @@ public class CrawlingConfig {
 		}
 	}
 
-		
-	public void addQuery(String query){
-		if(query.contains("+")){
-			query = query.substring(query.lastIndexOf("+")+1, query.length());
-			
+	public void addQuery(String query) {
+		if (query.contains("+")) {
+			query = query.substring(query.lastIndexOf("+") + 1, query.length());
+
 		}
-		if(query.contains("\"")){
+		if (query.contains("\"")) {
 			query = query.replaceAll("\"", "");
 		}
 		sentQueries.add(query.intern());
@@ -534,27 +548,30 @@ public class CrawlingConfig {
 				querySet.put(query.intern(), 0); // not to use later
 				firstQuery = false;
 			} else if (this.querySelectionApproach == this.leastFromLast) {
-				query=null;
-				if(listOfReturnedResultsPerQuery != null && listOfReturnedResultsPerQuery.size()>0){
-				query = fbBasedQueryGenerator
-						.setNextQueryLeastFromLast(initialQuery, this.isIndexed, listOfReturnedResultsPerQuery, this.cache);
+				query = null;
+				if (listOfReturnedResultsPerQuery != null
+						&& listOfReturnedResultsPerQuery.size() > 0) {
+					query = fbBasedQueryGenerator.setNextQueryLeastFromLast(
+							initialQuery, this.isIndexed,
+							listOfReturnedResultsPerQuery, this.cache);
 				}
 				int indexMinus = 2;
-				while(query==null && indexMinus<sentQueries.size()-1){
-					List<String> temp = queriesResults.get(sentQueries.get(sentQueries.size()-indexMinus));
+				while (query == null && indexMinus < sentQueries.size() - 1) {
+					List<String> temp = queriesResults.get(sentQueries
+							.get(sentQueries.size() - indexMinus));
 					indexMinus++;
-					query = fbBasedQueryGenerator
-							.setNextQueryLeastFromLast(initialQuery, this.isIndexed, temp, this.cache);
+					query = fbBasedQueryGenerator.setNextQueryLeastFromLast(
+							initialQuery, this.isIndexed, temp, this.cache);
 				}
 				if (query != null) {
 					sentQueries.add(query.intern());
 					querySet.put(query.intern(), 0);
 					query = initialQueryProcesses + "+\"" + query + "\"";
-				} 
+				}
 			} else if (this.querySelectionApproach == this.mostFreqFeedbackText) {
 				query = fbBasedQueryGenerator.getMostFreqQuery(querySet,
 						initialQuery, this.isIndexed, this.cache);// .getLeastFreqQuery(querySet,
-										// initialQuery);
+				// initialQuery);
 				sentQueries.add(query.intern());
 				querySet.put(query.intern(), 0);
 				query = initialQueryProcesses + "+\"" + query + "\"";
@@ -562,7 +579,7 @@ public class CrawlingConfig {
 			} else if (this.querySelectionApproach == this.leastFreqFeedbackText) {
 				query = fbBasedQueryGenerator.getLeastFreqQuery(querySet,
 						initialQuery, this.isIndexed, this.cache);// .getLeastFreqQuery(querySet,
-										// initialQuery);
+				// initialQuery);
 				sentQueries.add(query.intern());
 				querySet.put(query.intern(), 0);
 				query = initialQueryProcesses + "+\"" + query + "\"";
@@ -610,7 +627,11 @@ public class CrawlingConfig {
 			} else if (queryIndexInQueryList < queries.size()) {
 				query = queries.get(queryIndexInQueryList);
 				if (!currentSiteDescription.isAcceptsStopWords()) {
-					if (textEditor.isRefinedQueryStopWordLength(query)) {
+					String tempTestQuery = query;
+					if(query.contains(this.initialQueryProcesses)){
+						tempTestQuery = tempTestQuery.replace(initialQueryProcesses +"+", "").replaceAll("\"", "");
+					}
+					if (textEditor.isRefinedQueryStopWordLength(tempTestQuery)) {
 						queryIndexInQueryList++;
 						return setNextQuery();
 					}
@@ -646,18 +667,19 @@ public class CrawlingConfig {
 				firstQuery = false;
 			} else {
 				query = fbBasedQueryGenerator.setNextQueryIn_Feedback_ClueWeb(
-						initialQuery, queryArray, this.termFreqInClueWeb, this.isIndexed, this.cache);
+						initialQuery, queryArray, this.termFreqInClueWeb,
+						this.isIndexed, this.cache);
 				if (query != null) {
 					sentQueries.add(query.intern());
 					querySet.put(query.intern(), 0);
 					query = initialQueryProcesses + "+\"" + query + "\"";
-					//query = initialQueryProcesses + "+" + query + "";
+					// query = initialQueryProcesses + "+" + query + "";
 
 				} else {
 					return null;
 				}
 			}
-		}else if (this.querySelectionApproach == this.correlationBased) {
+		} else if (this.querySelectionApproach == this.correlationBased) {
 			if (firstQuery) {// set first query
 				query = "";
 				for (String part : initialQuery) {
@@ -678,12 +700,14 @@ public class CrawlingConfig {
 				int specificFreq = 0;
 				specificFreq = setSpecificFreq(listOfAllReturnedResults.size());
 				listOfAllReturnedResults.size();
-				query = fbBasedQueryGenerator.setNextQueryIn_Correlation(querySet, initialQuery, isIndexed, cache, specificFreq, versionOld);
+				query = fbBasedQueryGenerator.setNextQueryIn_Correlation(
+						querySet, initialQuery, isIndexed, cache, specificFreq,
+						versionOld);
 				if (query != null) {
 					sentQueries.add(query.intern());
 					querySet.put(query.intern(), 0);
 					query = initialQueryProcesses + "+\"" + query + "\"";
-					//query = initialQueryProcesses + "+" + query + "";
+					// query = initialQueryProcesses + "+" + query + "";
 
 				} else {
 					return null;
@@ -718,30 +742,29 @@ public class CrawlingConfig {
 			if (this.textEditor.isRefinedQueryStopWordLength(term)) {
 				termInClueWeb.remove();
 			}
-		}		
+		}
 	}
 
 	private int setSpecificFreq(int size) {
 
-		int x = 3*size;
-		double y = (double)x/10000.0;
-		y = y*100;
-/*		while(y<1.0){
-			y = y*100;
-		}*/
-		return (int)y;
+		int x = 3 * size;
+		double y = (double) x / 10000.0;
+		y = y * 100;
+		/*
+		 * while(y<1.0){ y = y*100; }
+		 */
+		return (int) y;
 	}
 
-	public String processInitiateQuery(){
+	public String processInitiateQuery() {
 		for (String part : initialQuery) {
-			initialQueryProcesses = initialQueryProcesses + "+\""
-					+ part + "\"";
+			initialQueryProcesses = initialQueryProcesses + "+\"" + part + "\"";
 		}
-		initialQueryProcesses = initialQueryProcesses.replaceFirst(
-				"\\+", "");
+		initialQueryProcesses = initialQueryProcesses.replaceFirst("\\+", "");
 		firstQuery = false;
 		return initialQueryProcesses;
 	}
+
 	private void saveMostFreqTable() {
 		try {
 			File file = new File(this.getCrawlStatusPath() + "tableofmostfreq");
@@ -957,24 +980,27 @@ public class CrawlingConfig {
 		} else {
 			this.saveStringInFile(query, this.pathToSentQueriesDoc, true);
 		}
-	//	this.saveStringInFile("", this.pathToVisitedPagesPerQuery, true);// remove
-		this.saveListsQueryResults(query, listOfReturnedResultsForQuery, this.pathToVisitedPagesPerQuery);																	// the
-																			// urls
-																			// entered
-																			// for
-																			// previous
-																			// query
+		// this.saveStringInFile("", this.pathToVisitedPagesPerQuery, true);//
+		// remove
+		this.saveListsQueryResults(query, listOfReturnedResultsForQuery,
+				this.pathToVisitedPagesPerQuery); // the
+		// urls
+		// entered
+		// for
+		// previous
+		// query
 	}
 
-	public void saveListsQueryResults(String query, List<String> list, String filePath) {
+	public void saveListsQueryResults(String query, List<String> list,
+			String filePath) {
 		try {
 			File file = new File(filePath);
 			FileWriter fstream = new FileWriter(file, true);
 			BufferedWriter out = new BufferedWriter(fstream);
-			out.write("query::"+query+"\n");
+			out.write("query::" + query + "\n");
 			out.flush();
 			for (String element : list) {
-				out.write("returnedresult::"+element + "\n");
+				out.write("returnedresult::" + element + "\n");
 				out.flush();
 			}
 			out.close();
@@ -984,7 +1010,7 @@ public class CrawlingConfig {
 		}
 
 	}
-	
+
 	public void saveLists(ArrayList<String> list, String filePath) {
 		try {
 			File file = new File(filePath);
@@ -1282,8 +1308,7 @@ public class CrawlingConfig {
 					.iterator();
 			boolean noBusyBrowser = true;
 			while (iter.hasNext()) {
-				Browser br = (Browser) iter
-						.next();
+				Browser br = (Browser) iter.next();
 				boolean ifFree = this.detailedPagesBrowsers.get(br);
 				if (!ifFree) {
 					noBusyBrowser = false;
@@ -1334,7 +1359,7 @@ public class CrawlingConfig {
 	}
 
 	public void setQueriesSearchResults() {
-		
+
 		try {
 			File file = new File(this.pathToVisitedPagesPerQuery);
 			FileReader fstream = new FileReader(file);
@@ -1344,30 +1369,32 @@ public class CrawlingConfig {
 			List<String> resultsPerQuery = new ArrayList<String>();
 			while ((line = in.readLine()) != null) {
 				// String line = in.readLine();
-				if(line.startsWith("query::")){
-					if(resultsPerQuery.size() != 0 && !query.equals("")){
-						//if it is not the first query
+				if (line.startsWith("query::")) {
+					if (resultsPerQuery.size() != 0 && !query.equals("")) {
+						// if it is not the first query
 						List<String> temp = new ArrayList<String>();
 						temp.addAll(resultsPerQuery);
 						this.queriesResults.put(query, temp);
 						resultsPerQuery.clear();
 					}
-					
-					query = line.replace("query::","");
-					if(query.contains("+")){
-						query = query.substring(query.lastIndexOf("+")+1, query.length());
-						
+
+					query = line.replace("query::", "");
+					if (query.contains("+")) {
+						query = query.substring(query.lastIndexOf("+") + 1,
+								query.length());
+
 					}
-					if(query.contains("\"")){
+					if (query.contains("\"")) {
 						query = query.replaceAll("\"", "");
 					}
-				}else if(line.startsWith("returnedresult::")){
+				} else if (line.startsWith("returnedresult::")) {
 					String resultLink = line.replace("returnedresult::", "");
 					resultsPerQuery.add(resultLink);
 				}
 			}
-			if(resultsPerQuery.size() != 0 && !query.equals("")){//to put the last one
-				//if it is not the first query
+			if (resultsPerQuery.size() != 0 && !query.equals("")) {// to put the
+																	// last one
+				// if it is not the first query
 				List<String> temp = new ArrayList<String>();
 				temp.addAll(resultsPerQuery);
 				this.queriesResults.put(query, temp);
@@ -1377,7 +1404,72 @@ public class CrawlingConfig {
 			fstream.close();
 		} catch (Exception e) {// Catch exception if any
 			System.err.println("Error: " + e.getMessage());
-		}		
+		}
 	}
 
+	public static HashMap<String, List<String>> readQueriesResults(
+			String pathToQueriesResults) {
+		HashMap<String, List<String>> queryResults = new HashMap<String, List<String>>();
+		ArrayList<String> visitedPagesInLastCrawl = new ArrayList<String>();
+		try {
+			File file = new File(pathToQueriesResults);
+			FileReader fstream = new FileReader(file);
+			BufferedReader in = new BufferedReader(fstream);
+			String line = "";
+			String query = "";
+			String entity = "";
+			boolean firstQuery = true;
+			while ((line = in.readLine()) != null) {
+				if (line.startsWith("query::")) {
+					if (firstQuery) {
+						entity = line.replace("query::", "")
+								.replaceAll("\"", "").trim();
+						query = entity;
+						firstQuery = false;
+					} else {
+						ArrayList<String> temp = new ArrayList<String>();
+						temp.addAll(visitedPagesInLastCrawl);
+						queryResults.put(query, temp);
+						visitedPagesInLastCrawl.clear();
+						query = line.replace("query::\"" + entity + "\"+", "")
+								.trim();
+						if (query.contains("\"")) {
+							query = query.replaceAll("\"", "");
+						}
+					}
+
+				} else if (line.startsWith("returnedresult::")) {
+					visitedPagesInLastCrawl.add(line.replace(
+							"returnedresult::", "").trim());
+					/*
+					 * allVisitedPagesOne.add(line.replace("returnedresult::",
+					 * "") .trim());
+					 */
+				}
+			}
+			in.close();
+			fstream.close();
+		} catch (Exception e) {// Catch exception if any
+			System.err.println("Error: " + e.getMessage());
+		}
+		return queryResults;
+	}
+
+	public int compareTwoResultsSets(
+			List<String> results1, ArrayList<String> results2) {
+		Set<String> AllChangedPagesV1 = new HashSet<String>();
+		int changedQueryResults = 0;
+		Iterator<String> iterPages = results2.iterator();
+		while (iterPages.hasNext()) {
+			String tempPageURL = (String) iterPages.next();
+			// tempPageURL =
+			// "http://ktree.sourceforge.net/emtree/clueweb12/d91a81540.html";
+			if (!results1.contains(tempPageURL)) {
+				changedQueryResults++;
+				AllChangedPagesV1.add(tempPageURL);
+
+			}
+		}
+		return changedQueryResults;
+	}
 }

@@ -103,7 +103,7 @@ public class FeedbackBasedQueryGenerator {
 				if (index > 0) {
 					index = index - 1;
 					foundLastPageInQueryResultsPresentInCache = cache.indexNew
-							.searchIndex(
+							.IsInSearchIndex(
 									listOfReturnedResultsPerQuery.get(index),
 									"url");
 

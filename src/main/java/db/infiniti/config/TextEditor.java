@@ -122,7 +122,7 @@ public class TextEditor {
 		}
 		
 		if(query.contains(",")
-				|| query.contains(".")
+				//|| query.contains(".")
 				|| query.contains("'")
 				|| query.contains("_")
 				|| query.contains("+")

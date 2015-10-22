@@ -9,9 +9,12 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -43,6 +46,7 @@ import ExcelWritePack.ExcelWriter;
 import db.infiniti.config.CrawledLinkDS;
 import db.infiniti.config.CrawlingConfig;
 import db.infiniti.config.CrawlingReportDS;
+import db.infiniti.config.PagesComparator;
 import db.infiniti.config.QueryResStatistics;
 import db.infiniti.sitedescription.WebsiteDS;
 import db.infiniti.surf.Browser;
@@ -56,11 +60,11 @@ import db.infiniti.xpath.ResultLinkXpathFinder;
 public class CrawlerSellenium {
 
 	ArrayList<String> listOfAllDownloadedReturnedResults = new ArrayList<String>();
-	//ArrayList<String> listOfAllReturnedResults;
+	// ArrayList<String> listOfAllReturnedResults;
 	ArrayList<String> listOfReturnedResultsPerQuery;
 
 	int pauseForSendingQueriesTime = 30;
-	
+
 	String url = "";
 	String searchResultlink;
 	String sourceURL;
@@ -108,6 +112,8 @@ public class CrawlerSellenium {
 	List<Integer> totalreturnedResList = new ArrayList<Integer>();
 	boolean stopCrawlForQuery = false;
 	boolean dataModelLoaded = false;
+	HashMap<String, List<String>> queryResultsOne =new	HashMap<String, List<String>>();
+ ;
 
 	static int numberOfProcessedLinks = 0;
 
@@ -133,11 +139,16 @@ public class CrawlerSellenium {
 	}
 
 	public void run() {
-
+		final PagesComparator pagesComparator = new PagesComparator();
 		int posedQueiesIndex = 0;
 		// TODO checkForAcceptingStopWords();
 		crawlingConfig.resetForNextCollection();
 
+		if(crawlingConfig.isChangedPagesIndexed()){
+		queryResultsOne = CrawlingConfig.readQueriesResults(
+				crawlingConfig.pathToQueriesResultsFromCrawlOne);
+		}
+		
 		int noOfReturnedResultsPages = 0;
 		listOfAllDownloadedReturnedResults.addAll(crawlingConfig
 				.readLinesFromFile(crawlingConfig.pathToAllDOwnloadedPages));
@@ -163,33 +174,26 @@ public class CrawlerSellenium {
 					.setCountCrawlingQueries(crawlingConfig
 							.readFirstNumberFromFile(crawlingConfig.pathToNumberOfSentQueries));
 
-		} /*else {
-			if (crawlingConfig.queriesResults.size() > 0) {
-				Iterator<String> queryIter = crawlingConfig.queriesResults
-						.keySet().iterator();
-
-				crawlingConfig.processInitiateQuery();
-				// also firstQuery=false;
-				// also increase queryindex
-				
-				 * Object[] a = crawlingConfig.queriesResults
-				 * .keySet().toArray();
-				 * 
-				 * for(Object key : a){ System.out.println(key+""); }
-				 
-				while (queryIter.hasNext()) {
-					String stringQuery = (String) queryIter.next();
-					cacheQueryResults(stringQuery);
-				}
-
-			}
-			// crawlingConfig.fbBasedQueryGenerator.sentQueries =
-			// crawlingConfig.
-			url = crawlingConfig.setNextQuery();
-			posedQueiesIndex++;
-			// crawlingConfig.saveCrawlStatusQuery();
-			noOfReturnedResultsPages = 0;
-		}*/
+		} /*
+		 * else { if (crawlingConfig.queriesResults.size() > 0) {
+		 * Iterator<String> queryIter = crawlingConfig.queriesResults
+		 * .keySet().iterator();
+		 * 
+		 * crawlingConfig.processInitiateQuery(); // also firstQuery=false; //
+		 * also increase queryindex
+		 * 
+		 * Object[] a = crawlingConfig.queriesResults .keySet().toArray();
+		 * 
+		 * for(Object key : a){ System.out.println(key+""); }
+		 * 
+		 * while (queryIter.hasNext()) { String stringQuery = (String)
+		 * queryIter.next(); cacheQueryResults(stringQuery); }
+		 * 
+		 * } // crawlingConfig.fbBasedQueryGenerator.sentQueries = //
+		 * crawlingConfig. url = crawlingConfig.setNextQuery();
+		 * posedQueiesIndex++; // crawlingConfig.saveCrawlStatusQuery();
+		 * noOfReturnedResultsPages = 0; }
+		 */
 		if (url.equals("")) {
 			url = crawlingConfig.setNextQuery();
 		}
@@ -213,11 +217,12 @@ public class CrawlerSellenium {
 		int numberOfDocInReturnedResults = 0;
 		while (continueCrawl) {
 			String q = crawlingConfig.getLastQuery();
-			if (QuerySentAlreadyInCache(crawlingConfig.queriesResults,q)) {
+			if (QuerySentAlreadyInCache(crawlingConfig.queriesResults, q)) {
 				cacheQueryResults(crawlingConfig.getLastQuery());
 				crawlingConfig.listOfReturnedResultsPerQuery.clear();
 				crawlingConfig.listOfReturnedResultsPerQuery.trimToSize();
-				crawlingConfig.listOfReturnedResultsPerQuery.addAll(listOfReturnedResultsPerQuery);
+				crawlingConfig.listOfReturnedResultsPerQuery
+						.addAll(listOfReturnedResultsPerQuery);
 				url = crawlingConfig.setNextQuery();
 			} else {
 				noOfReturnedResultsPages++;
@@ -290,7 +295,8 @@ public class CrawlerSellenium {
 						// sRPagesbrowser.getPageText();//.getText();
 						crawlingConfig.cache.saveInCache(searchResultlink,
 								pageContent, pageHTMLContent,
-								crawlingConfig.isIndexed);
+								crawlingConfig.isIndexed,
+								crawlingConfig.isChangedPagesIndexed());
 					} else if (crawlingConfig.isHave_words_in_memory()) {
 						crawlingConfig.updateQueryList(sRPagesbrowser
 								.getPageText());
@@ -340,7 +346,8 @@ public class CrawlerSellenium {
 						crawlReport.incNoRepeatedLinks();
 					}
 					// "http://www.lexology.com/library/detail.aspx?g=45038f45-8d2a-4c5b-a4bd-fcb399a59db4";//
-					if (!crawlingConfig.listOfAllReturnedResults.contains(resultLink)) {
+					if (!crawlingConfig.listOfAllReturnedResults
+							.contains(resultLink)) {
 						// &&
 						// crawlingConfig.cache.existsAlreadyInCache(resultLink)
 						/*
@@ -387,7 +394,9 @@ public class CrawlerSellenium {
 									if (crawlingConfig.cache
 											.existsAlreadyInCacheOrIndex(
 													resultLink,
-													crawlingConfig.isIndexed())) {
+													crawlingConfig.isIndexed(),
+													crawlingConfig
+															.isChangedPagesIndexed())) {
 										pageHTMLContent = crawlingConfig.cache
 												.getPageHTMLContentFromCacheOrIndex(
 														resultLink,
@@ -402,7 +411,35 @@ public class CrawlerSellenium {
 										 * .getPageHTMLContentFromCache
 										 * (resultLink);
 										 */
+										if (crawlingConfig
+												.isChangedPagesIndexed()) {
+											detailedPagesbrowser
+													.loadPage(resultLink);
+											String pageHTMLContentCheck = detailedPagesbrowser
+													.getPageSource(resultLink);
+											String pageContentCheck = detailedPagesbrowser
+													.getPageTextFromHTML(pageHTMLContent);
+											pagesComparator.setPageOne(
+													pageHTMLContent,
+													pageContent);
+											pagesComparator.setPageTwo(
+													pageHTMLContentCheck,
+													pageContentCheck);
+											if (pagesComparator
+													.changedMethod_shingle()) {
+												// TODO
+												crawlReport
+														.setNumSameURLChangedText(crawlReport
+																.getNumSameURLChangedText()+1);
+											}
+										}
+
 									} else {
+										if(crawlingConfig.isChangedPagesIndexed()){
+											crawlReport
+													.setNumCompletelyNewLinksComparePreviousCrawl(crawlReport
+															.getNumCompletelyNewLinksComparePreviousCrawl()+1);
+										}
 										detailedPagesbrowser
 												.loadPage(resultLink);
 										pageHTMLContent = detailedPagesbrowser
@@ -411,10 +448,14 @@ public class CrawlerSellenium {
 												.getPageTextFromHTML(pageHTMLContent);
 										// pageContent =
 										// detailedPagesbrowser.getPageText();//.getText();
-										crawlingConfig.cache.saveInCache(
-												resultLink, pageContent,
-												pageHTMLContent,
-												crawlingConfig.isIndexed);
+										crawlingConfig.cache
+												.saveInCache(
+														resultLink,
+														pageContent,
+														pageHTMLContent,
+														crawlingConfig.isIndexed,
+														crawlingConfig
+																.isChangedPagesIndexed());
 									}
 									setTextHtmlOfLink(pageHTMLContent,
 											crawledLinkDS);// it
@@ -464,7 +505,8 @@ public class CrawlerSellenium {
 							}
 						}, resultLink);
 						seperatedBrowser.start();
-					} else if (crawlingConfig.listOfAllReturnedResults.contains(resultLink)) {
+					} else if (crawlingConfig.listOfAllReturnedResults
+							.contains(resultLink)) {
 						repeatedLinks++;// for one query
 						crawlReport.incNumRepeatedLinksInGeneral();
 						crawledLinkDS.setRepeated("Yes");
@@ -495,10 +537,10 @@ public class CrawlerSellenium {
 						// Handle exception
 					}
 				}
-				if(numberOfProcessedLinks == numberOfDocInReturnedResults){
+				if (numberOfProcessedLinks == numberOfDocInReturnedResults) {
 					stopCrawlForQuery = true;
 				}
-				
+
 				crawlingConfig.waitTillAllBrowsersAreFree();
 				if (posedQueiesIndex > 650) {
 					continueCrawl = false;
@@ -518,24 +560,46 @@ public class CrawlerSellenium {
 						detectNextButtonXpath();
 					}
 				}
-				//set the results for the last query
+				// set the results for the last query
 				crawlingConfig.listOfReturnedResultsPerQuery.clear();
 				crawlingConfig.listOfReturnedResultsPerQuery.trimToSize();
-				crawlingConfig.listOfReturnedResultsPerQuery.addAll(listOfReturnedResultsPerQuery);
-				
+				crawlingConfig.listOfReturnedResultsPerQuery
+						.addAll(listOfReturnedResultsPerQuery);
+				if(crawlingConfig.isChangedPagesIndexed()){
+					String tempQueryPart = crawlingConfig.query; 
+					if(tempQueryPart.contains(crawlingConfig.initialQueryProcesses)){
+
+						if(tempQueryPart.equals(crawlingConfig.initialQueryProcesses)){
+							tempQueryPart = tempQueryPart.replaceAll("\"", "");
+						}
+						tempQueryPart = tempQueryPart.replace(crawlingConfig.initialQueryProcesses, "").replaceAll("\"", "");
+					}
+					if(queryResultsOne.containsKey(tempQueryPart)){
+						List<String> tempListString = queryResultsOne.get(tempQueryPart);
+						if(tempListString!= null){
+							crawlReport.setResultsEachQueryPreviousRun(tempListString.size());
+						}
+						int res = crawlingConfig.compareTwoResultsSets(tempListString, listOfReturnedResultsPerQuery );
+						crawlReport.setNumNewLinksInQueryResults(res);
+					}
+				}				
 				if (stopCrawlForQuery == true) {
 					crawlReport.addQueryNumberofItsResults(
 							crawlingConfig.query,
 							(crawlingConfig.getQueryIndex() - 1),
 							crawlingConfig.listOfAllReturnedResults.size(),
 							crawlReport.getNumRepeatedLinks(), repeatedLinks,
-							totalreturnedResForQuery);
+							totalreturnedResForQuery, 
+							crawlReport.getResultsEachQueryPreviousRun(),
+							crawlReport.getNumCompletelyNewLinksComparePreviousCrawl(), 
+							crawlReport.getNumNewLinksInQueryResults(), 
+							crawlReport.getNumSameURLChangedText());
 					printQueriesResults("crawledData/"
 							+ crawlingConfig.getCollectionName() + "/"
 							+ (crawlingConfig.getQueryIndex() - 1)
 							+ "-results.xls");
 
-					crawlReport.setNumRepeatedLinks(0);
+					crawlReport.reset();
 					totalreturnedResForQuery = 0;
 					totalreturnedResForQueryList.set(0,
 							totalreturnedResForQuery);
@@ -566,20 +630,23 @@ public class CrawlerSellenium {
 						}
 					} else {
 						crawlReport.addQueryNumberofItsResults(
-								// queries.get(crawlingConfig.getQueryIndex() -
-								// 1),
 								crawlingConfig.query,
 								(crawlingConfig.getQueryIndex() - 1),
 								crawlingConfig.listOfAllReturnedResults.size(),
-								crawlReport.getNumRepeatedLinks(),
-								repeatedLinks, totalreturnedResForQuery);
+								crawlReport.getNumRepeatedLinks(), repeatedLinks,
+								totalreturnedResForQuery, 
+								crawlReport.getResultsEachQueryPreviousRun(),
+								crawlReport.getNumCompletelyNewLinksComparePreviousCrawl(), 
+								crawlReport.getNumNewLinksInQueryResults(), 
+								crawlReport.getNumSameURLChangedText());
 
 						printQueriesResults("crawledData/"
 								+ crawlingConfig.getCollectionName() + "/"
 								+ (crawlingConfig.getQueryIndex() - 1)
 								+ "-results.xls");
 
-						crawlReport.setNumRepeatedLinks(0);
+						//crawlReport.setNumRepeatedLinks(0);
+						crawlReport.reset();
 						totalreturnedResForQuery = 0;
 						totalreturnedResForQueryList.set(0,
 								totalreturnedResForQuery);
@@ -624,14 +691,14 @@ public class CrawlerSellenium {
 
 	private boolean QuerySentAlreadyInCache(
 			LinkedHashMap<String, List<String>> queriesResults, String query) {
-		if(query.contains("+")){
-			query = query.substring(query.lastIndexOf("+")+1, query.length());
-			
+		if (query.contains("+")) {
+			query = query.substring(query.lastIndexOf("+") + 1, query.length());
+
 		}
-		if(query.contains("\"")){
+		if (query.contains("\"")) {
 			query = query.replaceAll("\"", "");
 		}
-		if(queriesResults.containsKey(query)){
+		if (queriesResults.containsKey(query)) {
 			return true;
 		}
 		return false;
@@ -818,6 +885,11 @@ public class CrawlerSellenium {
 			}
 			elementList = (List<WebElement>) sRPagesbrowser
 					.runXPathQuery(this.item_xp);
+			if(elementList.isEmpty()){
+				this.item_xp = "//div[./div/h3/a]";
+				elementList = (List<WebElement>) sRPagesbrowser
+						.runXPathQuery(this.item_xp);
+			}
 		}
 		return elementList;
 
@@ -1243,20 +1315,34 @@ public class CrawlerSellenium {
 				"Query");
 		ExcelWr.setColumn(ExcelWr.column + 1);
 		ExcelWr.addLabel(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
-				"#Crawled Results");
+				"#AllCrawled Results");
 		ExcelWr.setColumn(ExcelWr.column + 1);
 		ExcelWr.addLabel(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
-				"#RepeatedInOnlyQueyResults");
+				"#DupsQueryResults");
 		ExcelWr.setColumn(ExcelWr.column + 1);
 		ExcelWr.addLabel(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
-				"#RepeatedInAllResults");
-
+				"#DupsInAllResults");
+/*
+		ExcelWr.addLabel(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
+				"#ReturnedResForQuery");*/
+		ExcelWr.setColumn(ExcelWr.column + 1);
 		ExcelWr.addLabel(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
 				"#ReturnedResForQuery");
+		
 		ExcelWr.setColumn(ExcelWr.column + 1);
 		ExcelWr.addLabel(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
-				"#ReturnedResForQuery");
-
+				"#ReturnedResForQueryPreviousRun");
+		
+		ExcelWr.setColumn(ExcelWr.column + 1);
+		ExcelWr.addLabel(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
+				"#CompletelyNewResults");
+		ExcelWr.setColumn(ExcelWr.column + 1);
+		ExcelWr.addLabel(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
+				"#NewLinksInQueryResults");
+		ExcelWr.setColumn(ExcelWr.column + 1);
+		ExcelWr.addLabel(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
+				"#SameURLChangedText");
+		
 		ExcelWr.setColumn(4);
 		ExcelWr.setRow(ExcelWr.row + 1);
 
@@ -1264,11 +1350,13 @@ public class CrawlerSellenium {
 			String query = (String) e.next();
 			QueryResStatistics qResStat = crawlReport
 					.getQueryNumberofItsResults().get(query);
-			System.out.println(qResStat.getqPosedIndex() + " \t\t\t" + query
-					+ "			\t\t\t" + qResStat.getUniqResults() + "    \t\t\t"
-					+ qResStat.getRepeatedResults());
+			System.out.println(qResStat.getqPosedIndex() + " \t\t" + query
+					+ "			\t\t" + qResStat.getUniqResults() + "    \t\t"
+					+ qResStat.getRepeatedResults() + "    \t\t\t"
+							+ qResStat.getRepeatedResultsGeneral());
 			ExcelWr.addNumber(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
 					qResStat.getqPosedIndex());
+			
 			ExcelWr.setColumn(ExcelWr.column + 1);
 			ExcelWr.addLabel(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
 					query);
@@ -1283,10 +1371,27 @@ public class CrawlerSellenium {
 			ExcelWr.setColumn(ExcelWr.column + 1);
 			ExcelWr.addNumber(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
 					qResStat.getRepeatedResults());
+			
 			ExcelWr.setColumn(ExcelWr.column + 1);
 			ExcelWr.addNumber(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
 					qResStat.gettotalResultsEachQuery());
 
+			ExcelWr.setColumn(ExcelWr.column + 1);
+			ExcelWr.addNumber(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
+					qResStat.gettotalResultsEachQueryPreviousRun());
+			
+			ExcelWr.setColumn(ExcelWr.column + 1);
+			ExcelWr.addNumber(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
+					qResStat.getNumCompletelyNewLinksComparePreviousCrawl());
+			
+			ExcelWr.setColumn(ExcelWr.column + 1);
+			ExcelWr.addNumber(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
+					qResStat.getNumNewLinksInQueryResults());
+			
+			ExcelWr.setColumn(ExcelWr.column + 1);
+			ExcelWr.addNumber(ExcelWr.excelSheet, ExcelWr.column, ExcelWr.row,
+					qResStat.getNumSameURLChangedText());
+			
 			ExcelWr.setColumn(4);
 
 			ExcelWr.setRow(ExcelWr.row + 1);
@@ -1313,7 +1418,7 @@ public class CrawlerSellenium {
 
 		} catch (org.openqa.selenium.remote.UnreachableBrowserException ee) {
 
-		}catch(Exception e){
+		} catch (Exception e) {
 			System.out.println("Error in extracting results links.");
 		}
 
@@ -1513,13 +1618,13 @@ public class CrawlerSellenium {
 	}
 
 	public void cacheQueryResults(String query) {
-	/*	crawlingConfig.processInitiateQuery();
-		String stringQuery = query;
-		crawlingConfig.query = stringQuery;
-		crawlingConfig.addQuery(stringQuery);*/
+		/*
+		 * crawlingConfig.processInitiateQuery(); String stringQuery = query;
+		 * crawlingConfig.query = stringQuery;
+		 * crawlingConfig.addQuery(stringQuery);
+		 */
 		List<String> listOfResultsForQuery = new ArrayList<String>();
-		listOfResultsForQuery = crawlingConfig.queriesResults
-				.get(query);
+		listOfResultsForQuery = crawlingConfig.queriesResults.get(query);
 		this.listOfReturnedResultsPerQuery.clear();
 		this.listOfReturnedResultsPerQuery.trimToSize();
 		this.listOfReturnedResultsPerQuery.addAll(listOfResultsForQuery);
@@ -1529,7 +1634,8 @@ public class CrawlerSellenium {
 				crawlingConfig.listOfAllReturnedResults.add(resultLink);
 
 				increaseReturnedResr();// totalreturnedRes
-			} else if (crawlingConfig.listOfAllReturnedResults.contains(resultLink)) {
+			} else if (crawlingConfig.listOfAllReturnedResults
+					.contains(resultLink)) {
 				repeatedLinks++;// for one query
 				crawlReport.incNumRepeatedLinksInGeneral();
 				crawlReport.incNoRepeatedLinks();
@@ -1540,22 +1646,26 @@ public class CrawlerSellenium {
 				repeatedLinks++;// for one query
 
 			}
-			//only if present in old index
-			//for least most freq purposes
-			crawlingConfig.cache
-			.saveInNewIndex(
-					resultLink,
+			// only if present in old index
+			// for least most freq purposes
+			crawlingConfig.cache.saveInNewIndex(resultLink,
 					crawlingConfig.isIndexed());
 		}
-		crawlReport.addQueryNumberofItsResults(crawlingConfig.query,
+		crawlReport.addQueryNumberofItsResults(
+				crawlingConfig.query,
 				(crawlingConfig.getQueryIndex() - 1),
 				crawlingConfig.listOfAllReturnedResults.size(),
 				crawlReport.getNumRepeatedLinks(), repeatedLinks,
-				totalreturnedResForQuery);
+				totalreturnedResForQuery, 
+				crawlReport.getResultsEachQueryPreviousRun(),
+				crawlReport.getNumCompletelyNewLinksComparePreviousCrawl(), 
+				crawlReport.getNumNewLinksInQueryResults(), 
+				crawlReport.getNumSameURLChangedText());
 		printQueriesResults("crawledData/" + crawlingConfig.getCollectionName()
 				+ "/" + (crawlingConfig.getQueryIndex() - 1) + "-results.xls");
 
-		crawlReport.setNumRepeatedLinks(0);
+		//crawlReport.setNumRepeatedLinks(0);
+		crawlReport.reset();
 		totalreturnedResForQuery = 0;
 		totalreturnedResForQueryList.set(0, totalreturnedResForQuery);
 		repeatedLinks = 0;
